@@ -1,0 +1,44 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow checks out code, builds an image, performs a container image
+# scan with Anchore's Syft tool, and uploads the results to the GitHub Dependency
+# submission API.
+
+# For more information on the Anchore sbom-action usage
+# and parameters, see https://github.com/anchore/sbom-action. For more
+# information about the Anchore SBOM tool, Syft, see
+# https://github.com/anchore/syft
+name: Anchore Syft SBOM Generator
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Run Syft to generate SBOM
+        uses: anchore/sbom-action@v0.14.3
+        with:
+          path: "."                      # Scan the root of the repo
+          format: "cyclonedx-json"      # SBOM format: cyclonedx-json, spdx-json, syft-json
+          output-file: "syft-sbom.json" # Output SBOM filename
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: syft-sbom
+          path: syft-sbom.json
