@@ -29,20 +29,21 @@ jobs:
     steps:
       - name: Checkout source code
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 1  # Just get the latest commit
 
-      - name: Run Syft to generate SBOM (no artifact upload)
+      - name: Run Syft to generate SBOM from source
         uses: anchore/sbom-action@v0.14.3
         with:
-          path: "."
+          path: "${{ github.workspace }}"      # Explicit path to your repo
           format: "cyclonedx-json"
-          output-file: "sbom.json"
-          upload-artifact: false   # 🔥 disables problematic auto-upload
+          output-file: "fd_moveit2_sbom.json"
+          upload-artifact: false               # Turn off auto upload
 
-      - name: Upload SBOM manually with safe name
+      - name: Upload SBOM manually
         uses: actions/upload-artifact@v4
         with:
-          name: sbomfile           # ✅ safe: no dots or dashes
-          path: sbom.json
-
+          name: fd-moveit2-sbom
+          path: fd_moveit2_sbom.json
 
 
