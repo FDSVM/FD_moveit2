@@ -1,0 +1,46 @@
+name: Python Pip SBOM
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+permissions:
+  contents: write
+
+jobs:
+  generate-pip-sbom:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install pip dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          else
+            echo "No requirements.txt found; skipping pip install."
+          fi
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
+
+      - name: Generate SBOM from site-packages
+        run: |
+          SITE_PACKAGES=$(python -c "import site; print(site.getsitepackages()[0])")
+          syft dir:$SITE_PACKAGES -o cyclonedx-json > pip_sbom.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: fd-moveit2-pip-sbom
+          path: pip_sbom.json
