@@ -1,0 +1,47 @@
+# This workflow uses actions that are not certified by GitHub.
+# They are provided by a third-party and are governed by
+# separate terms of service, privacy policy, and support
+# documentation.
+
+# This workflow checks out code, builds an image, performs a container image
+# scan with Anchore's Syft tool, and uploads the results to the GitHub Dependency
+# submission API.
+
+# For more information on the Anchore sbom-action usage
+# and parameters, see https://github.com/anchore/sbom-action. For more
+# information about the Anchore SBOM tool, Syft, see
+# https://github.com/anchore/syft
+name: Anchore Syft SBOM Scan (Source Code)
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: write  # needed for dependency submission API
+
+jobs:
+  source-sbom:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # required for submitting dependencies to GitHub's Dependency Graph
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Generate SBOM from source with Syft
+        uses: anchore/sbom-action@v0.14.3
+        with:
+          path: "."                                # Scan the repo folder
+          format: "cyclonedx-json"                 # Options: cyclonedx-json, spdx-json, syft-json, table
+          artifact-name: "moveit2-source-sbom.json"
+          dependency-snapshot: true                # Submit to GitHub Dependency Graph
+
+      - name: Upload SBOM as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: moveit2-sbom
+          path: moveit2-source-sbom.json
