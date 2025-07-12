@@ -35,10 +35,22 @@ jobs:
         with:
           required-ros-distributions: humble
 
-      - name: Build MoveIt2 workspace with colcon
+      - name: Install colcon and rosdep tools
         run: |
           sudo apt update
-          sudo apt install -y python3-colcon-common-extensions
+          sudo apt install -y python3-colcon-common-extensions python3-rosdep
+
+      - name: Initialize rosdep
+        run: |
+          sudo rosdep init || true
+          rosdep update
+
+      - name: Install ROS 2 dependencies
+        run: |
+          rosdep install --from-paths src --ignore-src -r -y
+
+      - name: Build MoveIt2 workspace
+        run: |
           colcon build --symlink-install
 
       - name: Install Syft
@@ -54,6 +66,3 @@ jobs:
         with:
           name: moveit2-sbom
           path: moveit2_sbom.json
-
-
-
