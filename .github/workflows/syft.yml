@@ -23,27 +23,37 @@ permissions:
   contents: write
 
 jobs:
-  generate-sbom:
+  build-and-generate-sbom:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout source code
+      - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 1  # Just get the latest commit
 
-      - name: Run Syft to generate SBOM from source
-        uses: anchore/sbom-action@v0.14.3
+      - name: Set up ROS 2 Humble
+        uses: ros-tooling/setup-ros@v0.7
         with:
-          path: "${{ github.workspace }}"      # Explicit path to your repo
-          format: "cyclonedx-json"
-          output-file: "fd_moveit2_sbom.json"
-          upload-artifact: false               # Turn off auto upload
+          required-ros-distributions: humble
 
-      - name: Upload SBOM manually
+      - name: Build MoveIt2 workspace with colcon
+        run: |
+          sudo apt update
+          sudo apt install -y python3-colcon-common-extensions
+          colcon build --symlink-install
+
+      - name: Install Syft
+        run: |
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+
+      - name: Run Syft on install/ directory
+        run: |
+          syft dir:install/ -o cyclonedx-json > moveit2_sbom.json
+
+      - name: Upload SBOM
         uses: actions/upload-artifact@v4
         with:
-          name: fd-moveit2-sbom
-          path: fd_moveit2_sbom.json
+          name: moveit2-sbom
+          path: moveit2_sbom.json
+
 
 
