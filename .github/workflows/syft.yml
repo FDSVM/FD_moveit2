@@ -30,11 +30,19 @@ jobs:
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      - name: Run Syft to generate SBOM
+      - name: Run Syft to generate SBOM (no artifact upload)
         uses: anchore/sbom-action@v0.14.3
         with:
           path: "."
           format: "cyclonedx-json"
           output-file: "sbom.json"
+          upload-artifact: false   # 🔥 disables problematic auto-upload
+
+      - name: Upload SBOM manually with safe name
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbomfile           # ✅ safe: no dots or dashes
+          path: sbom.json
+
 
 
