@@ -33,9 +33,10 @@ jobs:
       - name: Run Syft to generate SBOM
         uses: anchore/sbom-action@v0.14.3
         with:
-          path: "."                      # Scan the current repo
-          format: "cyclonedx-json"      # Output format
-          output-file: "syft-sbom.json" # Output file name
+          path: "."                      # Directory to scan
+          format: "cyclonedx-json"      # SBOM format
+          output-file: "syft-sbom.json" # Output file
+          artifact-name: "syft-sbom"    # ✅ Valid artifact name (no dots)
 
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
