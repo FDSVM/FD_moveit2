@@ -15,9 +15,9 @@ name: Anchore Syft SBOM Generator
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 permissions:
   contents: write
@@ -27,41 +27,54 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: ros:humble
+      image: ubuntu:22.04
 
     steps:
-      - name: Install dependencies
+      - name: Prepare environment
         run: |
           apt update
-          apt install -y \
-            curl \
-            git \
-            python3-colcon-common-extensions \
-            python3-rosdep \
-            lsb-release \
-            gnupg2 \
-            sudo
+          apt install -y curl gnupg2 lsb-release software-properties-common
+          locale-gen en_US en_US.UTF-8
+          update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
+          export LANG=en_US.UTF-8
+
+      - name: Install ROS 2 Humble
+        run: |
+          apt update && apt install -y curl
+          curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2.list
+          apt update
+          apt install -y ros-humble-desktop python3-colcon-common-extensions python3-rosdep
 
       - name: Initialize rosdep
         run: |
-          rosdep update || true
+          rosdep init || true
+          rosdep update
 
-      - name: Checkout MoveIt2 source
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install ROS 2 dependencies with rosdep
+      - name: Reorganize workspace
         run: |
+          mkdir -p src
+          shopt -s dotglob
+          mv * src || true
+
+      - name: Install MoveIt2 dependencies
+        run: |
+          source /opt/ros/humble/setup.sh
           rosdep install --from-paths src --ignore-src -r -y
 
-      - name: Build MoveIt2 workspace
+      - name: Build MoveIt2
         run: |
+          source /opt/ros/humble/setup.sh
           colcon build --symlink-install
 
       - name: Install Syft
         run: |
           curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
-      - name: Run Syft on install/ directory
+      - name: Generate SBOM
         run: |
           syft dir:install/ -o cyclonedx-json > moveit2_sbom.json
 
