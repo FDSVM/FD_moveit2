@@ -36,10 +36,11 @@ jobs:
           path: "."
           format: "cyclonedx-json"
           output-file: "sbom.json"
-          artifact-name: "sbomjson"  #  no dots, dashes, or special chars
+          artifact-name: "sbomfile"  # ✅ lowercase, no special characters
 
       - name: Upload SBOM as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: sbomjson
+          name: sbomfile
           path: sbom.json
+
