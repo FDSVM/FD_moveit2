@@ -26,26 +26,30 @@ jobs:
   build-and-generate-sbom:
     runs-on: ubuntu-latest
 
+    container:
+      image: ros:humble
+
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Set up ROS 2 Humble
-        uses: ros-tooling/setup-ros@v0.7
-        with:
-          required-ros-distributions: humble
-
-      - name: Install colcon and rosdep tools
+      - name: Install dependencies
         run: |
-          sudo apt update
-          sudo apt install -y python3-colcon-common-extensions python3-rosdep
+          apt update
+          apt install -y \
+            curl \
+            git \
+            python3-colcon-common-extensions \
+            python3-rosdep \
+            lsb-release \
+            gnupg2 \
+            sudo
 
       - name: Initialize rosdep
         run: |
-          sudo rosdep init || true
-          rosdep update
+          rosdep update || true
 
-      - name: Install ROS 2 dependencies
+      - name: Checkout MoveIt2 source
+        uses: actions/checkout@v4
+
+      - name: Install ROS 2 dependencies with rosdep
         run: |
           rosdep install --from-paths src --ignore-src -r -y
 
@@ -55,7 +59,7 @@ jobs:
 
       - name: Install Syft
         run: |
-          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sudo sh -s -- -b /usr/local/bin
+          curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /usr/local/bin
 
       - name: Run Syft on install/ directory
         run: |
