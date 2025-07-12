@@ -33,14 +33,13 @@ jobs:
       - name: Prepare environment
         run: |
           apt update
-          apt install -y curl gnupg2 lsb-release software-properties-common
-          locale-gen en_US en_US.UTF-8
+          apt install -y curl gnupg2 lsb-release software-properties-common locales
+          locale-gen en_US.UTF-8
           update-locale LC_ALL=en_US.UTF-8 LANG=en_US.UTF-8
           export LANG=en_US.UTF-8
 
       - name: Install ROS 2 Humble
         run: |
-          apt update && apt install -y curl
           curl -s https://raw.githubusercontent.com/ros/rosdistro/master/ros.key | gpg --dearmor -o /usr/share/keyrings/ros-archive-keyring.gpg
           echo "deb [arch=amd64 signed-by=/usr/share/keyrings/ros-archive-keyring.gpg] http://packages.ros.org/ros2/ubuntu $(lsb_release -cs) main" > /etc/apt/sources.list.d/ros2.list
           apt update
@@ -48,6 +47,7 @@ jobs:
 
       - name: Initialize rosdep
         run: |
+          source /opt/ros/humble/setup.sh
           rosdep init || true
           rosdep update
 
